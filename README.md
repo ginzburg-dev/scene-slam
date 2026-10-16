@@ -31,6 +31,21 @@ Measured on an i7-11800H with OpenCV 4.14; the absolute error is accumulated dri
 - TUM trajectory, JSONL frame diagnostics, summary JSON, and debug images.
 - Deterministic geometry, association, PnP, output, pipeline, and CLI tests.
 
+## Quick start
+
+Requirements: CMake 3.20+, a C++20 compiler, OpenCV 4.x, and [uv](https://docs.astral.sh/uv/) for the viewer and evaluation tools.
+
+```bash
+make install                                   # uv sync: viewer and evaluation environment
+make build OPENCV_DIR=/path/to/opencv4         # configure and compile
+make test                                      # full ctest suite
+make run DATASET=/path/to/rgbd_dataset_freiburg1_room OUT=out/fr1_room
+make view OUT=out/fr1_room                     # open the result in Rerun
+make eval OUT=out/fr1_room GROUNDTRUTH=/path/to/groundtruth.txt
+```
+
+`make` on its own lists every target. Each step is a plain CMake or `uv` command, spelled out below for anyone without `make`.
+
 ## Build
 
 Requirements: CMake 3.20+, a C++20 compiler, and OpenCV 4.x with `core`, `calib3d`, `features2d`, `imgcodecs`, and `imgproc`.
