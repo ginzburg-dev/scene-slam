@@ -35,7 +35,7 @@ scene_slam run --dataset /path/to/rgbd_dataset_freiburg1_xyz \
   --camera configs/tum_freiburg1.yaml --out out/fr1_xyz --max-frames 250
 ```
 
-Outputs are `trajectory_tum.txt`, `frames.jsonl`, `map.ply`, `summary.json`, and `debug/*.png`. Open `map.ply` in CloudCompare, MeshLab, or Open3D.
+Outputs are `trajectory_tum.txt`, `frames.jsonl`, `map.ply`, `summary.json`, and `debug/*.png`. Open `map.ply` in CloudCompare or inspect the whole run in Rerun.
 
 ## Interactive 3D viewer
 
@@ -46,12 +46,14 @@ uv sync
 uv run python scripts/view_map.py out/fr1_xyz
 ```
 
-Keyboard controls: `1` map, `2` trajectory, `3` camera frusta, `4` ground grid, `S` screenshot, `Q` close. The mouse orbits, pans, and zooms. To preview the interface without a dataset, use an explicitly synthetic scene:
+Rerun provides a persistent orientation gizmo, an entity tree for toggling the map, trajectory, and camera frusta, and a timeline for scrubbing the active camera pose. To preview the interface without a dataset, use an explicitly synthetic scene:
 
 ```bash
 uv run python scripts/view_map.py --demo
-uv run python scripts/view_map.py out/fr1_xyz --screenshot out/fr1_xyz/view.png
+uv run python scripts/view_map.py out/fr1_xyz --save out/fr1_xyz/recording.rrd
 ```
+
+Open a saved recording later with `uv run rerun out/fr1_xyz/recording.rrd`. Screenshots can be copied from the Rerun viewer UI.
 
 ## Evaluation
 

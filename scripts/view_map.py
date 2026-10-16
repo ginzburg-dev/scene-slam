@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Interactive Open3D viewer for SceneSLAM maps and camera trajectories."""
+"""Open SceneSLAM maps and trajectories in the Rerun data viewer."""
 
 from __future__ import annotations
 
@@ -20,14 +20,13 @@ class PoseSample:
 def read_ply_vertex_count(path: Path) -> int:
     if not path.is_file():
         raise FileNotFoundError(f"missing point cloud: {path}")
-    with path.open("r", encoding="ascii", errors="strict") as stream:
-        if stream.readline().strip() != "ply":
+    with path.open("rb") as stream:
+        if stream.readline().strip() != b"ply":
             raise ValueError(f"not a PLY file: {path}")
         vertex_count = None
-        for line in stream:
-            fields = line.strip().split()
-            if fields[:2] == ["format", "binary_little_endian"]:
-                pass
+        for raw_line in stream:
+            line = raw_line.decode("ascii").strip()
+            fields = line.split()
             if len(fields) == 3 and fields[:2] == ["element", "vertex"]:
                 vertex_count = int(fields[2])
             if fields == ["end_header"]:
@@ -67,20 +66,13 @@ def read_tum_trajectory(path: Path) -> list[PoseSample]:
     return poses
 
 
-def quaternion_xyzw_to_rotation(
-    quaternion: tuple[float, float, float, float]
-) -> tuple[tuple[float, float, float], ...]:
-    x, y, z, w = quaternion
-    return (
-        (1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)),
-        (2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)),
-        (2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)),
-    )
-
-
-def synthetic_scene() -> tuple[list[tuple[float, float, float]], list[tuple[float, float, float]], list[PoseSample]]:
+def synthetic_scene() -> tuple[
+    list[tuple[float, float, float]],
+    list[tuple[int, int, int]],
+    list[PoseSample],
+]:
     points: list[tuple[float, float, float]] = []
-    colors: list[tuple[float, float, float]] = []
+    colors: list[tuple[int, int, int]] = []
 
     def surface(origin, axis_u, axis_v, count_u, count_v, color):
         for u in range(count_u):
@@ -95,11 +87,11 @@ def synthetic_scene() -> tuple[list[tuple[float, float, float]], list[tuple[floa
                 )
                 colors.append(color)
 
-    surface((-3.0, 0.0, -2.5), (6.0, 0.0, 0.0), (0.0, 0.0, 5.0), 70, 60, (0.20, 0.30, 0.42))
-    surface((-3.0, 0.0, -2.5), (6.0, 0.0, 0.0), (0.0, 2.8, 0.0), 70, 35, (0.18, 0.48, 0.72))
-    surface((-3.0, 0.0, -2.5), (0.0, 0.0, 5.0), (0.0, 2.8, 0.0), 60, 35, (0.42, 0.22, 0.68))
-    surface((-1.1, 0.75, -0.7), (2.2, 0.0, 0.0), (0.0, 0.0, 1.4), 35, 24, (0.95, 0.48, 0.10))
-    surface((-1.1, 0.0, -0.7), (0.0, 0.75, 0.0), (0.0, 0.0, 1.4), 12, 24, (0.62, 0.27, 0.08))
+    surface((-3.0, 0.0, -2.5), (6.0, 0.0, 0.0), (0.0, 0.0, 5.0), 70, 60, (51, 76, 107))
+    surface((-3.0, 0.0, -2.5), (6.0, 0.0, 0.0), (0.0, 2.8, 0.0), 70, 35, (46, 122, 184))
+    surface((-3.0, 0.0, -2.5), (0.0, 0.0, 5.0), (0.0, 2.8, 0.0), 60, 35, (107, 56, 173))
+    surface((-1.1, 0.75, -0.7), (2.2, 0.0, 0.0), (0.0, 0.0, 1.4), 35, 24, (242, 122, 26))
+    surface((-1.1, 0.0, -0.7), (0.0, 0.75, 0.0), (0.0, 0.0, 1.4), 12, 24, (158, 69, 20))
 
     poses = []
     for index in range(36):
@@ -117,150 +109,138 @@ def synthetic_scene() -> tuple[list[tuple[float, float, float]], list[tuple[floa
     return points, colors, poses
 
 
-def transform_local(point, pose: PoseSample):
-    rotation = quaternion_xyzw_to_rotation(pose.quaternion_xyzw)
-    return tuple(
-        sum(rotation[row][column] * point[column] for column in range(3))
-        + pose.translation[row]
-        for row in range(3)
+def make_blueprint(rrb):
+    return rrb.Blueprint(
+        rrb.Spatial3DView(
+            origin="/world",
+            name="SceneSLAM 3D",
+            background=[5, 8, 16],
+            line_grid=rrb.LineGrid3D(visible=True, spacing=1.0),
+            spatial_information=rrb.SpatialInformation(
+                target_frame="world",
+                show_axes=True,
+                show_bounding_box=True,
+            ),
+        ),
+        rrb.SelectionPanel(state="expanded"),
+        rrb.TimePanel(state="expanded", timeline="frame"),
+        collapse_panels=False,
     )
 
 
-def make_line_set(o3d, np, points, lines, color):
-    geometry = o3d.geometry.LineSet()
-    geometry.points = o3d.utility.Vector3dVector(np.asarray(points, dtype=float))
-    geometry.lines = o3d.utility.Vector2iVector(
-        np.asarray(lines, dtype=int).reshape((-1, 2))
-    )
-    geometry.colors = o3d.utility.Vector3dVector(
-        np.tile(np.asarray(color, dtype=float), (len(lines), 1))
-    )
-    return geometry
-
-
-def trajectory_geometry(o3d, np, poses):
-    points = [pose.translation for pose in poses]
-    lines = [(index, index + 1) for index in range(len(points) - 1)]
-    return make_line_set(o3d, np, points, lines, (1.0, 0.42, 0.05))
-
-
-def frusta_geometry(o3d, np, poses, step):
-    local = [(0.0, 0.0, 0.0), (-0.12, -0.08, 0.22), (0.12, -0.08, 0.22),
-             (0.12, 0.08, 0.22), (-0.12, 0.08, 0.22)]
-    edges = [(0, 1), (0, 2), (0, 3), (0, 4), (1, 2), (2, 3), (3, 4), (4, 1)]
-    points = []
-    lines = []
-    for pose in poses[::step]:
-        base = len(points)
-        points.extend(transform_local(point, pose) for point in local)
-        lines.extend((base + start, base + end) for start, end in edges)
-    return make_line_set(o3d, np, points, lines, (0.10, 0.78, 1.0))
-
-
-def grid_geometry(o3d, np):
-    points = []
-    lines = []
-    for value in range(-6, 7):
-        base = len(points)
-        points.extend([(value, 0.0, -6.0), (value, 0.0, 6.0),
-                       (-6.0, 0.0, value), (6.0, 0.0, value)])
-        lines.extend([(base, base + 1), (base + 2, base + 3)])
-    return make_line_set(o3d, np, points, lines, (0.12, 0.16, 0.22))
-
-
-def run_viewer(args, poses, demo_data=None) -> int:
+def log_scene(args, poses, demo_data=None) -> int:
     try:
-        import numpy as np
-        import open3d as o3d
+        import rerun as rr
+        import rerun.blueprint as rrb
     except ImportError:
-        print(
-            "Open3D viewer dependency is missing. Install with: uv sync",
-            file=sys.stderr,
-        )
+        print("Rerun dependency is missing. Install with: uv sync", file=sys.stderr)
         return 2
 
+    blueprint = make_blueprint(rrb)
+    if args.save is None:
+        rr.init("scene_slam", spawn=True, default_blueprint=blueprint)
+    else:
+        args.save.parent.mkdir(parents=True, exist_ok=True)
+        rr.init("scene_slam")
+        rr.save(args.save, default_blueprint=blueprint)
+
     if demo_data is None:
-        cloud = o3d.io.read_point_cloud(str(args.result_dir / "map.ply"))
-        if cloud.is_empty():
-            raise ValueError("point cloud is empty")
-    else:
-        demo_points, demo_colors, _ = demo_data
-        cloud = o3d.geometry.PointCloud()
-        cloud.points = o3d.utility.Vector3dVector(np.asarray(demo_points, dtype=float))
-        cloud.colors = o3d.utility.Vector3dVector(np.asarray(demo_colors, dtype=float))
-
-    layers = {
-        "map": cloud,
-        "trajectory": trajectory_geometry(o3d, np, poses),
-        "cameras": frusta_geometry(o3d, np, poses, max(1, args.frustum_step)),
-        "grid": grid_geometry(o3d, np),
-        "axes": o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.5),
-    }
-    visible = {name: True for name in layers}
-    visualizer = o3d.visualization.VisualizerWithKeyCallback()
-    visualizer.create_window("SceneSLAM — RGB-D Map Viewer", 1600, 900)
-    for index, geometry in enumerate(layers.values()):
-        visualizer.add_geometry(geometry, reset_bounding_box=index == 0)
-
-    def toggle(name):
-        def callback(window):
-            if visible[name]:
-                window.remove_geometry(layers[name], reset_bounding_box=False)
-            else:
-                window.add_geometry(layers[name], reset_bounding_box=False)
-            visible[name] = not visible[name]
-            return False
-        return callback
-
-    screenshot_path = args.screenshot or Path("sceneslam_view.png")
-
-    def capture(window):
-        screenshot_path.parent.mkdir(parents=True, exist_ok=True)
-        window.capture_screen_image(str(screenshot_path), do_render=True)
-        print(f"saved screenshot: {screenshot_path}")
-        return False
-
-    visualizer.register_key_callback(ord("1"), toggle("map"))
-    visualizer.register_key_callback(ord("2"), toggle("trajectory"))
-    visualizer.register_key_callback(ord("3"), toggle("cameras"))
-    visualizer.register_key_callback(ord("4"), toggle("grid"))
-    visualizer.register_key_callback(ord("S"), capture)
-    options = visualizer.get_render_option()
-    options.background_color = np.asarray((0.008, 0.012, 0.025))
-    options.point_size = args.point_size
-    options.line_width = 2.0
-    options.show_coordinate_frame = True
-    view = visualizer.get_view_control()
-    view.set_lookat((0.0, 1.1, 0.0))
-    view.set_front((0.55, 0.28, -0.79))
-    view.set_up((0.0, 1.0, 0.0))
-    view.set_zoom(0.62)
-    print("Controls: mouse=orbit/pan/zoom, 1=map, 2=trajectory, 3=cameras, 4=grid, S=screenshot, Q=quit")
-
-    if args.screenshot:
-        visualizer.poll_events()
-        visualizer.update_renderer()
-        rendered = np.asarray(
-            visualizer.capture_screen_float_buffer(do_render=True), dtype=float
+        rr.log("world", rr.ViewCoordinates.RDF, static=True)
+        rr.log_file_from_path(
+            args.result_dir / "map.ply",
+            entity_path_prefix="world/map",
+            static=True,
         )
-        spatial_range = np.ptp(rendered, axis=(0, 1)) if rendered.size else []
-        if rendered.size == 0 or max(spatial_range, default=0.0) < 0.01:
-            visualizer.destroy_window()
-            raise RuntimeError("rendered screenshot is blank")
-        capture(visualizer)
     else:
-        visualizer.run()
-    visualizer.destroy_window()
+        points, colors, _ = demo_data
+        rr.log("world", rr.ViewCoordinates.RIGHT_HAND_Y_UP, static=True)
+        rr.log(
+            "world/map",
+            rr.Points3D(
+                points,
+                colors=colors,
+                radii=rr.Radius.ui_points(args.point_size),
+            ),
+            static=True,
+        )
+
+    trajectory = [pose.translation for pose in poses]
+    rr.log(
+        "world/trajectory",
+        rr.LineStrips3D(
+            [trajectory],
+            colors=[255, 104, 24],
+            radii=rr.Radius.ui_points(3.0),
+        ),
+        static=True,
+    )
+
+    for index, pose in enumerate(poses[:: args.frustum_step]):
+        entity = f"world/keyframes/camera_{index:04d}"
+        rr.log(
+            entity,
+            rr.Transform3D(
+                translation=pose.translation,
+                quaternion=rr.Quaternion(xyzw=pose.quaternion_xyzw),
+            ),
+            static=True,
+        )
+        rr.log(
+            entity,
+            rr.Pinhole(
+                fov_y=1.0,
+                aspect_ratio=4.0 / 3.0,
+                camera_xyz=rr.ViewCoordinates.RDF,
+                image_plane_distance=0.18,
+                color=[55, 200, 255],
+                line_width=1.5,
+            ),
+            static=True,
+        )
+
+    rr.log(
+        "world/current_camera",
+        rr.Pinhole(
+            fov_y=1.0,
+            aspect_ratio=4.0 / 3.0,
+            camera_xyz=rr.ViewCoordinates.RDF,
+            image_plane_distance=0.28,
+            color=[255, 214, 64],
+            line_width=2.5,
+        ),
+        static=True,
+    )
+    rr.log(
+        "world/current_camera",
+        rr.TransformAxes3D(axis_length=0.35, show_frame=True),
+        static=True,
+    )
+    for frame_index, pose in enumerate(poses):
+        rr.set_time("frame", sequence=frame_index)
+        rr.set_time("timestamp", timestamp=pose.timestamp)
+        rr.log(
+            "world/current_camera",
+            rr.Transform3D(
+                translation=pose.translation,
+                quaternion=rr.Quaternion(xyzw=pose.quaternion_xyzw),
+            ),
+        )
+
+    rr.disconnect()
+    if args.save is not None:
+        print(f"saved Rerun recording: {args.save}")
+    else:
+        print("Rerun opened: use the timeline to scrub camera poses and the entity tree to toggle layers")
     return 0
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("result_dir", nargs="?", type=Path)
-    parser.add_argument("--demo", action="store_true", help="show a synthetic room without a dataset")
-    parser.add_argument("--summary-only", action="store_true", help="validate inputs without opening Open3D")
-    parser.add_argument("--screenshot", type=Path, help="capture one frame and exit")
-    parser.add_argument("--point-size", type=float, default=2.2)
+    parser.add_argument("--demo", action="store_true", help="show a labelled synthetic scene")
+    parser.add_argument("--summary-only", action="store_true", help="validate inputs without opening Rerun")
+    parser.add_argument("--save", type=Path, help="write an .rrd recording instead of opening the viewer")
+    parser.add_argument("--point-size", type=float, default=1.5, help="demo point radius in UI pixels")
     parser.add_argument("--frustum-step", type=int, default=15)
     args = parser.parse_args()
     if not args.demo and args.result_dir is None:
@@ -286,12 +266,11 @@ def main() -> int:
         print(f"mode={mode} points={point_count} poses={len(poses)}")
         if args.summary_only:
             return 0
-        return run_viewer(args, poses, demo_data)
-    except (OSError, ValueError) as error:
+        return log_scene(args, poses, demo_data)
+    except (OSError, RuntimeError, ValueError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 1
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

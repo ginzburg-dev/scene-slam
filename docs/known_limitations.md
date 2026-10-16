@@ -7,5 +7,5 @@
 - Dynamic objects, rolling shutter, exposure changes, repeated textures, and low-texture scenes are not modelled explicitly.
 - The voxel map keeps the first point in each voxel; it is not a TSDF or watertight mesh.
 - Runtime is offline CPU processing; real-time camera, ROS 2, and hardware claims have not been validated.
-- The optional Open3D viewer visualises completed runs; it is not a live tracking GUI.
+- The Rerun viewer visualises completed runs; live sensor capture is not implemented yet.
 - No ATE, RPE, FPS, or accuracy result is claimed until a real dataset run is recorded.

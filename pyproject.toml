@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Interactive viewer for SceneSLAM point clouds and trajectories"
 requires-python = ">=3.10,<3.15"
 dependencies = [
-    "open3d>=0.18.0",
+    "rerun-sdk>=0.39.0",
 ]
 
 [tool.uv]

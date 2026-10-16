@@ -49,7 +49,7 @@ class ScriptTests(unittest.TestCase):
             self.assertIn("x_range_m=2", result.stdout)
             self.assertIn("z_range_m=3", result.stdout)
 
-    def test_viewer_validates_scene_without_open3d(self):
+    def test_viewer_validates_scene_without_opening_ui(self):
         with tempfile.TemporaryDirectory() as directory:
             result_dir = Path(directory)
             (result_dir / "map.ply").write_text(
@@ -76,6 +76,24 @@ class ScriptTests(unittest.TestCase):
             )
             self.assertIn("mode=result points=2 poses=2", result.stdout)
 
+            recording = result_dir / "result.rrd"
+            saved = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "scripts" / "view_map.py"),
+                    str(result_dir),
+                    "--save",
+                    str(recording),
+                    "--frustum-step",
+                    "1",
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(saved.stderr, "")
+            self.assertGreater(recording.stat().st_size, 0)
+
     def test_viewer_demo_is_available_without_dataset(self):
         result = subprocess.run(
             [
@@ -89,6 +107,23 @@ class ScriptTests(unittest.TestCase):
             text=True,
         )
         self.assertRegex(result.stdout, r"mode=synthetic points=[1-9][0-9]+ poses=[1-9][0-9]+")
+
+    def test_viewer_can_save_a_rerun_recording(self):
+        with tempfile.TemporaryDirectory() as directory:
+            recording = Path(directory) / "demo.rrd"
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "scripts" / "view_map.py"),
+                    "--demo",
+                    "--save",
+                    str(recording),
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            self.assertGreater(recording.stat().st_size, 0)
 
 
 if __name__ == "__main__":
