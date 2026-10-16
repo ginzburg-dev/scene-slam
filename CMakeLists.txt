@@ -8,7 +8,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(OpenCV 4 REQUIRED COMPONENTS core calib3d features2d imgcodecs imgproc)
 
 add_library(sceneslam_core src/geometry.cpp src/rgbd.cpp src/odometry.cpp
-  src/map.cpp src/output.cpp)
+  src/map.cpp src/output.cpp src/pipeline.cpp)
 
 target_include_directories(sceneslam_core PUBLIC include)
 target_link_libraries(sceneslam_core PUBLIC opencv_core opencv_calib3d
@@ -33,10 +33,26 @@ add_executable(test_outputs tests/test_outputs.cpp)
 target_include_directories(test_outputs PRIVATE include tests)
 target_link_libraries(test_outputs PRIVATE sceneslam_core)
 add_test(NAME outputs COMMAND test_outputs)
+add_executable(test_pipeline tests/test_pipeline.cpp)
+target_include_directories(test_pipeline PRIVATE include tests)
+target_link_libraries(test_pipeline PRIVATE sceneslam_core)
+add_test(NAME pipeline COMMAND test_pipeline)
+
+add_executable(scene_slam src/main.cpp)
+target_link_libraries(scene_slam PRIVATE sceneslam_core)
+add_test(NAME selftest COMMAND scene_slam selftest)
+add_test(NAME missing_dataset
+  COMMAND scene_slam run --dataset ${CMAKE_SOURCE_DIR}/missing-dataset
+          --camera ${CMAKE_SOURCE_DIR}/configs/tum_freiburg1.yaml
+          --out ${CMAKE_BINARY_DIR}/missing-output)
+set_tests_properties(missing_dataset PROPERTIES WILL_FAIL TRUE)
 if(WIN32)
-  set_tests_properties(geometry association pnp outputs PROPERTIES ENVIRONMENT_MODIFICATION
+  set_tests_properties(geometry association pnp outputs pipeline selftest missing_dataset
+    PROPERTIES ENVIRONMENT_MODIFICATION
     "PATH=path_list_prepend:${OpenCV_DIR}/x64/vc16/bin")
 endif()
+
+
 
 
 
