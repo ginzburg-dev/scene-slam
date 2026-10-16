@@ -174,8 +174,7 @@ def run_viewer(args, poses, demo_data=None) -> int:
         import open3d as o3d
     except ImportError:
         print(
-            "Open3D viewer dependency is missing. Install with: "
-            "python -m pip install -r requirements-viewer.txt",
+            "Open3D viewer dependency is missing. Install with: uv sync",
             file=sys.stderr,
         )
         return 2
