@@ -112,15 +112,10 @@ def synthetic_scene() -> tuple[
 def make_blueprint(rrb):
     return rrb.Blueprint(
         rrb.Spatial3DView(
-            origin="/world",
+            origin="/",
             name="SceneSLAM 3D",
             background=[5, 8, 16],
             line_grid=rrb.LineGrid3D(visible=True, spacing=1.0),
-            spatial_information=rrb.SpatialInformation(
-                target_frame="world",
-                show_axes=True,
-                show_bounding_box=True,
-            ),
         ),
         rrb.SelectionPanel(state="expanded"),
         rrb.TimePanel(state="expanded", timeline="frame"),
@@ -193,7 +188,7 @@ def log_scene(args, poses, demo_data=None) -> int:
                 camera_xyz=rr.ViewCoordinates.RDF,
                 image_plane_distance=0.18,
                 color=[55, 200, 255],
-                line_width=1.5,
+                line_width=0.006,
             ),
             static=True,
         )
@@ -206,13 +201,8 @@ def log_scene(args, poses, demo_data=None) -> int:
             camera_xyz=rr.ViewCoordinates.RDF,
             image_plane_distance=0.28,
             color=[255, 214, 64],
-            line_width=2.5,
+            line_width=0.01,
         ),
-        static=True,
-    )
-    rr.log(
-        "world/current_camera",
-        rr.TransformAxes3D(axis_length=0.35, show_frame=True),
         static=True,
     )
     for frame_index, pose in enumerate(poses):
