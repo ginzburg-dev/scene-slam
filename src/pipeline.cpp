@@ -161,6 +161,9 @@ RunSummary runDataset(const RunOptions& options) {
     }
   }
   summary.map_points = map.size();
+  summary.skipped_rgb_frames =
+      association.unmatched_rgb + (association.pairs.size() - selected);
+  summary.unmatched_depth_frames = association.unmatched_depth;
   writeTumTrajectory(options.output / "trajectory_tum.txt", records);
   writeFramesJsonl(options.output / "frames.jsonl", records);
   map.writePly(options.output / "map.ply");

@@ -87,7 +87,10 @@ void writeSummaryJson(const std::filesystem::path& path,
          << "  \"paired_frames\": " << summary.paired_frames << ",\n"
          << "  \"tracked_frames\": " << summary.tracked_frames << ",\n"
          << "  \"lost_frames\": " << summary.lost_frames << ",\n"
-         << "  \"map_points\": " << summary.map_points << "\n}\n";
+         << "  \"map_points\": " << summary.map_points << ",\n"
+         << "  \"skipped_rgb_frames\": " << summary.skipped_rgb_frames << ",\n"
+         << "  \"unmatched_depth_frames\": "
+         << summary.unmatched_depth_frames << "\n}\n";
 }
 
 }  // namespace sceneslam

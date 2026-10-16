@@ -71,6 +71,8 @@ int main(int argc, char** argv) {
               << " paired=" << summary.paired_frames
               << " tracked=" << summary.tracked_frames
               << " lost=" << summary.lost_frames
+              << " skipped_rgb=" << summary.skipped_rgb_frames
+              << " unmatched_depth=" << summary.unmatched_depth_frames
               << " map_points=" << summary.map_points << '\n';
     return 0;
   } catch (const std::exception& error) {

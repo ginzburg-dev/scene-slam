@@ -88,8 +88,10 @@ int main() {
     const std::vector<FrameRecord> records{valid, lost};
     writeTumTrajectory(directory.path() / "trajectory_tum.txt", records);
     writeFramesJsonl(directory.path() / "frames.jsonl", records);
-    writeSummaryJson(directory.path() / "summary.json",
-                     RunSummary{2, 2, 2, 1, 1, 1});
+    RunSummary run_summary{2, 2, 2, 1, 1, 1};
+    run_summary.skipped_rgb_frames = 3;
+    run_summary.unmatched_depth_frames = 4;
+    writeSummaryJson(directory.path() / "summary.json", run_summary);
 
     const std::string trajectory = readText(directory.path() / "trajectory_tum.txt");
     CHECK_TRUE(std::count(trajectory.begin(), trajectory.end(), '\n') == 1);
@@ -101,6 +103,8 @@ int main() {
     const std::string summary = readText(directory.path() / "summary.json");
     CHECK_TRUE(summary.find("\"tracked_frames\": 1") != std::string::npos);
     CHECK_TRUE(summary.find("\"lost_frames\": 1") != std::string::npos);
+    CHECK_TRUE(summary.find("\"skipped_rgb_frames\": 3") != std::string::npos);
+    CHECK_TRUE(summary.find("\"unmatched_depth_frames\": 4") != std::string::npos);
   });
 
   return failures == 0 ? 0 : 1;

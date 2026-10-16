@@ -62,15 +62,18 @@ int main() {
     CHECK_TRUE(cv::imwrite((dataset / "rgb/1.png").string(), textured));
     CHECK_TRUE(cv::imwrite((dataset / "rgb/2.png").string(), textured));
     CHECK_TRUE(cv::imwrite((dataset / "rgb/3.png").string(), blank));
+    CHECK_TRUE(cv::imwrite((dataset / "rgb/4.png").string(), blank));
     CHECK_TRUE(cv::imwrite((dataset / "depth/1.png").string(), depth));
     CHECK_TRUE(cv::imwrite((dataset / "depth/2.png").string(), depth));
     CHECK_TRUE(cv::imwrite((dataset / "depth/3.png").string(), no_depth));
     {
       std::ofstream rgb(dataset / "rgb.txt");
       std::ofstream dep(dataset / "depth.txt");
-      for (int index = 1; index <= 3; ++index) {
+      for (int index = 1; index <= 4; ++index) {
         rgb << index << ".000 rgb/" << index << ".png\n";
-        dep << index << ".005 depth/" << index << ".png\n";
+        if (index <= 3) {
+          dep << index << ".005 depth/" << index << ".png\n";
+        }
       }
     }
     const fs::path config_path = temporary.path() / "camera.yaml";
@@ -97,6 +100,8 @@ int main() {
     CHECK_TRUE(summary.tracked_frames == 2);
     CHECK_TRUE(summary.lost_frames == 1);
     CHECK_TRUE(summary.map_points <= 50);
+    CHECK_TRUE(summary.skipped_rgb_frames == 1);
+    CHECK_TRUE(summary.unmatched_depth_frames == 0);
     CHECK_TRUE(fs::exists(output / "trajectory_tum.txt"));
     CHECK_TRUE(fs::exists(output / "frames.jsonl"));
     CHECK_TRUE(fs::exists(output / "map.ply"));
