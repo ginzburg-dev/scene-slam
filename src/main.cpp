@@ -7,10 +7,16 @@
 #include <stdexcept>
 #include <string>
 
+#ifndef SCENESLAM_VERSION
+#define SCENESLAM_VERSION "0.0.0-dev"
+#endif
+
 namespace {
 
 void printUsage() {
-  std::cout << "Usage:\n"
+  std::cout << "SceneSLAM " SCENESLAM_VERSION "\n"
+               "Usage:\n"
+               "  scene_slam --version\n"
                "  scene_slam selftest\n"
                "  scene_slam run --dataset PATH --camera FILE --out PATH "
                "[--max-frames N] [--frame-step N] [--max-skew SECONDS] "
@@ -33,6 +39,10 @@ int main(int argc, char** argv) {
       return 2;
     }
     const std::string command = argv[1];
+    if (command == "--version" || command == "-v") {
+      std::cout << "SceneSLAM " SCENESLAM_VERSION "\n";
+      return 0;
+    }
     if (command == "selftest") {
       if (!sceneslam::runSelfTest()) {
         std::cerr << "SceneSLAM geometry self-test failed\n";

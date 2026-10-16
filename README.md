@@ -36,7 +36,7 @@ Relative error holds at 7 cm per second of motion over the whole sequence and do
 - Deterministic output: bit-identical across runs, with tests on every geometric step.
 - Interactive 3-D viewer for finished runs, and reproducible screenshot rendering.
 
-The scope of the pipeline and the conditions it has been tested under are set out in [known limitations](docs/known_limitations.md).
+The scope of the pipeline and the conditions it has been tested under are set out in [known limitations](docs/known_limitations.md). Version history is in the [changelog](CHANGELOG.md); `scene_slam --version` reports the build.
 
 ## Quick start
 

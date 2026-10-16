@@ -40,6 +40,8 @@ add_test(NAME pipeline COMMAND test_pipeline)
 
 add_executable(scene_slam src/main.cpp)
 target_link_libraries(scene_slam PRIVATE sceneslam_core)
+target_compile_definitions(scene_slam
+  PRIVATE SCENESLAM_VERSION="${PROJECT_VERSION}")
 add_test(NAME selftest COMMAND scene_slam selftest)
 add_test(NAME missing_dataset
   COMMAND scene_slam run --dataset ${CMAKE_SOURCE_DIR}/missing-dataset
