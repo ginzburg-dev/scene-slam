@@ -1,35 +1,37 @@
 # SceneSLAM
 
-CPU-first C++20 RGB-D visual odometry and bounded coloured point-cloud mapping.
-
-**Current status:** RGB-D odometry & mapping; SLAM features are in progress. Loop closure and pose-graph optimisation are not implemented.
+**Walk through a room with a depth camera and get back two things: where the camera went, and what the room looks like.** Both in metres, both computed frame by frame, fast enough to keep up with the camera.
 
 ![SceneSLAM map of TUM RGB-D freiburg1_room](docs/images/fr1_room_map.jpg)
 
-The whole of TUM RGB-D `freiburg1_room` — 1359 frames of real Kinect data, tracked end to end on the CPU with no GPU anywhere in the pipeline, with the estimated camera path in orange. The map is 1.4 M coloured voxel points; walls look thickened at the far corners because pure odometry drifts without loop closure.
+*An office reconstructed from 45 seconds of handheld Kinect footage. Orange is the path the camera took; the room is 1.4 million coloured points. Both were worked out by this program from nothing but the video and its depth channel.*
+
+Every machine that moves on its own has to answer those two questions first — a robot that cannot locate itself cannot navigate, and a headset that cannot map the room cannot place anything in it. SceneSLAM is that answer, built from the geometry up rather than assembled from an existing SLAM library: features are matched between frames, depth lifts them into 3-D, and the camera motion that best explains the match is solved for directly. OpenCV provides the image primitives; the tracking, the mapping, and the pose arithmetic are written here in C++20, and each geometric step is pinned down by its own test.
+
+| On TUM RGB-D `freiburg1_room`, 1359 frames | Result |
+| --- | --- |
+| Frames tracked without losing the camera | 1359 of 1359 |
+| Time per frame | 29.9 ms — faster than the camera delivers them |
+| Memory | 169 MB peak |
+| Position error against motion capture | 0.412 m RMSE over the whole walk |
+| Error accumulated per second of motion | 0.070 m, 3.34° |
+
+Those last two lines are the ones worth reading. Second to second the camera is tracked to within seven centimetres, and that error never grows — but nothing cancels it either, so over a 45-second walk it accumulates into 41 cm of error on average and 78 cm at the worst point. Closing the loop when the camera revisits a place it has already seen is what would cancel it, and that is the part not written yet. [The full record](docs/results_tum_fr1_room.md) has the commands, the machine, and the trajectory plotted against ground truth.
 
 ![Keyframe frusta over the reconstructed office](docs/images/fr1_room_keyframes.jpg)
 
-The same reconstruction from inside the room, with every twentieth estimated pose drawn as a camera frustum. Both images are Rerun renderings of this pipeline's own output; nothing is hand-modelled or retouched.
+*The same reconstruction seen from inside, with every twentieth camera pose drawn as a frustum. Nothing here is modelled by hand or retouched.*
 
-| TUM RGB-D `freiburg1_room`, 1359 frames | Result |
-| --- | --- |
-| Tracked / lost frames | 1359 / 0 |
-| ATE RMSE (SE(3)-aligned) | 0.412 m |
-| RPE over 1 s | 0.070 m, 3.34° RMSE |
-| Median tracking time | 29.9 ms per frame |
-| Peak working set | 169 MB |
+## What it does
 
-Measured on an i7-11800H with OpenCV 4.14; the absolute error is accumulated drift, and relative error per second is unchanged between the first 8 seconds and the full 45. See [the full record](docs/results_tum_fr1_room.md) for the commands, environment, and the trajectory plotted against ground truth.
+- Reads TUM RGB-D sequences and pairs each colour frame with the depth frame closest in time.
+- Tracks the camera by matching ORB features and solving PnP with RANSAC, in real metric units.
+- Says `LOST` and explains why, rather than quietly emitting a wrong pose.
+- Accumulates a bounded coloured voxel map and writes it as a PLY anyone can open.
+- Writes a TUM trajectory, per-frame diagnostics, a run summary, and debug images.
+- Produces bit-identical output run to run, and tests every geometric step.
 
-## Features
-
-- TUM RGB-D list parsing with nearest-timestamp association.
-- ORB matching and metric 3D-to-2D PnP-RANSAC tracking.
-- Explicit camera-to-world pose convention and `LOST` frames.
-- Bounded voxel map exported as coloured ASCII PLY.
-- TUM trajectory, JSONL frame diagnostics, summary JSON, and debug images.
-- Deterministic geometry, association, PnP, output, pipeline, and CLI tests.
+Not implemented: loop closure, pose-graph optimisation, relocalisation, bundle adjustment. See [known limitations](docs/known_limitations.md) for the full list.
 
 ## Quick start
 
@@ -48,7 +50,7 @@ make eval OUT=out/fr1_room GROUNDTRUTH=/path/to/groundtruth.txt
 
 ## Build
 
-Requirements: CMake 3.20+, a C++20 compiler, and OpenCV 4.x with `core`, `calib3d`, `features2d`, `imgcodecs`, and `imgproc`.
+The OpenCV modules used are `core`, `calib3d`, `features2d`, `imgcodecs`, and `imgproc`. Without `make`:
 
 ```bash
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DOpenCV_DIR=/path/to/opencv/lib/cmake/opencv4
@@ -81,7 +83,7 @@ uv sync
 uv run python scripts/view_map.py out/fr1_xyz
 ```
 
-Rerun provides a persistent orientation gizmo, an entity tree for toggling the map, trajectory, and camera frusta, and a timeline for scrubbing the active camera pose. To preview the interface without a dataset, use an explicitly synthetic scene:
+The viewer opens the point cloud, the trajectory, and the keyframe frusta as separate layers that can be switched off individually, and the timeline replays the camera pose frame by frame. To look at the interface without a dataset, there is a clearly synthetic scene:
 
 ```bash
 uv run python scripts/view_map.py --demo
@@ -101,7 +103,7 @@ The world frame is the first camera frame, so `--up` is the scene's vertical exp
 
 ## Evaluation
 
-Install `evo` separately (`uvx --from evo evo_ape ...` works without installing it), then print or execute metric-scale commands. The printed RPE windows default to 30 frames, one second at the TUM 30 Hz rate:
+Accuracy is measured with `evo` against the sequence's ground truth. The script prints the exact commands, or runs them with `--execute`; alignment is rigid only, since RGB-D output is already in metres and correcting scale would hide a real error. Error windows default to 30 frames, one second at the TUM frame rate:
 
 ```bash
 python scripts/evaluate.py --groundtruth /path/to/groundtruth.txt \
