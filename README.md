@@ -1,37 +1,42 @@
 # SceneSLAM
 
-**Walk through a room with a depth camera and get back two things: where the camera went, and what the room looks like.** Both in metres, both computed frame by frame, fast enough to keep up with the camera.
+**SceneSLAM is a real-time RGB-D visual odometry and dense mapping system.** It takes the colour and depth frames of a consumer depth camera, estimates the camera trajectory in metric units, and reconstructs the scene as a coloured 3-D point cloud — the localisation and reconstruction layer that robot navigation, AR placement and 3-D scanning are built on.
 
 ![SceneSLAM map of TUM RGB-D freiburg1_room](docs/images/fr1_room_map.jpg)
 
-*An office reconstructed from 45 seconds of handheld Kinect footage. Orange is the path the camera took; the room is 1.4 million coloured points. Both were worked out by this program from nothing but the video and its depth channel.*
+*TUM RGB-D `freiburg1_room`: 45 seconds of handheld Kinect footage reconstructed as 1.4 M coloured points, with the estimated camera trajectory in orange.*
 
-Every machine that moves on its own has to answer those two questions first — a robot that cannot locate itself cannot navigate, and a headset that cannot map the room cannot place anything in it. SceneSLAM is that answer, built from the geometry up rather than assembled from an existing SLAM library: features are matched between frames, depth lifts them into 3-D, and the camera motion that best explains the match is solved for directly. OpenCV provides the image primitives; the tracking, the mapping, and the pose arithmetic are written here in C++20, and each geometric step is pinned down by its own test.
+Written in C++20 with OpenCV, CPU-only, and faster than camera rate on a laptop. Feature tracking, PnP pose estimation, map integration and pose composition are implemented directly rather than wrapped around an existing SLAM library, and every geometric step has its own test. Loop closure and pose-graph optimisation are not implemented yet, so the map drifts over long trajectories — by how much is measured below.
 
-| On TUM RGB-D `freiburg1_room`, 1359 frames | Result |
+## Results
+
+Full `freiburg1_room` sequence, 1359 frames, i7-11800H, OpenCV 4.14:
+
+| Metric | Result |
 | --- | --- |
-| Frames tracked without losing the camera | 1359 of 1359 |
-| Time per frame | 29.9 ms — faster than the camera delivers them |
-| Memory | 169 MB peak |
-| Position error against motion capture | 0.412 m RMSE over the whole walk |
-| Error accumulated per second of motion | 0.070 m, 3.34° |
+| Frames tracked / lost | 1359 / 0 |
+| Tracking time per frame | 29.9 ms median, 34.8 ms p95 |
+| Peak memory | 169 MB |
+| ATE RMSE vs. motion capture | 0.412 m |
+| RPE per second | 0.070 m, 3.34° |
 
-Those last two lines are the ones worth reading. Second to second the camera is tracked to within seven centimetres, and that error never grows — but nothing cancels it either, so over a 45-second walk it accumulates into 41 cm of error on average and 78 cm at the worst point. Closing the loop when the camera revisits a place it has already seen is what would cancel it, and that is the part not written yet. [The full record](docs/results_tum_fr1_room.md) has the commands, the machine, and the trajectory plotted against ground truth.
+Relative error stays at 7 cm per second of motion and does not grow; absolute error does, because nothing corrects it — 0.412 m RMSE and 0.78 m at worst over the 45-second loop. That gap is exactly what loop closure and pose-graph optimisation would remove, and it is the next thing to build. [Full record](docs/results_tum_fr1_room.md): commands, environment, and the trajectory plotted against ground truth.
 
 ![Keyframe frusta over the reconstructed office](docs/images/fr1_room_keyframes.jpg)
 
-*The same reconstruction seen from inside, with every twentieth camera pose drawn as a frustum. Nothing here is modelled by hand or retouched.*
+*The same reconstruction from inside the room, with every twentieth estimated pose drawn as a camera frustum.*
 
-## What it does
+## Features
 
-- Reads TUM RGB-D sequences and pairs each colour frame with the depth frame closest in time.
-- Tracks the camera by matching ORB features and solving PnP with RANSAC, in real metric units.
-- Says `LOST` and explains why, rather than quietly emitting a wrong pose.
-- Accumulates a bounded coloured voxel map and writes it as a PLY anyone can open.
-- Writes a TUM trajectory, per-frame diagnostics, a run summary, and debug images.
-- Produces bit-identical output run to run, and tests every geometric step.
+- TUM RGB-D input, with each colour frame paired to the nearest depth frame in time.
+- Metric camera tracking: ORB matching, depth-backed 3-D points, PnP with RANSAC.
+- Frames marked `LOST` with a stated reason instead of an unreliable pose.
+- Bounded coloured voxel map, exported as ASCII PLY.
+- TUM trajectory, per-frame JSONL diagnostics, run summary, and debug images.
+- Deterministic output: bit-identical across runs, with tests on every geometric step.
+- Interactive 3-D viewer for finished runs, and reproducible screenshot rendering.
 
-Not implemented: loop closure, pose-graph optimisation, relocalisation, bundle adjustment. See [known limitations](docs/known_limitations.md) for the full list.
+Not implemented: loop closure, pose-graph optimisation, relocalisation, bundle adjustment, live camera input. See [known limitations](docs/known_limitations.md).
 
 ## Quick start
 
