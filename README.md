@@ -37,6 +37,22 @@ scene_slam run --dataset /path/to/rgbd_dataset_freiburg1_xyz \
 
 Outputs are `trajectory_tum.txt`, `frames.jsonl`, `map.ply`, `summary.json`, and `debug/*.png`. Open `map.ply` in CloudCompare, MeshLab, or Open3D.
 
+## Interactive 3D viewer
+
+Install the optional viewer dependency and open a real run:
+
+```bash
+python -m pip install -r requirements-viewer.txt
+python scripts/view_map.py out/fr1_xyz
+```
+
+Keyboard controls: `1` map, `2` trajectory, `3` camera frusta, `4` ground grid, `S` screenshot, `Q` close. The mouse orbits, pans, and zooms. To preview the interface without a dataset, use an explicitly synthetic scene:
+
+```bash
+python scripts/view_map.py --demo
+python scripts/view_map.py out/fr1_xyz --screenshot out/fr1_xyz/view.png
+```
+
 ## Evaluation
 
 Install `evo` separately, then print or execute metric-scale commands:

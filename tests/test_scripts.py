@@ -49,6 +49,47 @@ class ScriptTests(unittest.TestCase):
             self.assertIn("x_range_m=2", result.stdout)
             self.assertIn("z_range_m=3", result.stdout)
 
+    def test_viewer_validates_scene_without_open3d(self):
+        with tempfile.TemporaryDirectory() as directory:
+            result_dir = Path(directory)
+            (result_dir / "map.ply").write_text(
+                "ply\nformat ascii 1.0\nelement vertex 2\n"
+                "property float x\nproperty float y\nproperty float z\n"
+                "property uchar red\nproperty uchar green\nproperty uchar blue\n"
+                "end_header\n0 0 1 255 0 0\n1 0 1 0 255 0\n",
+                encoding="utf-8",
+            )
+            (result_dir / "trajectory_tum.txt").write_text(
+                "1.0 0 0 0 0 0 0 1\n2.0 1 0 0 0 0 0 1\n",
+                encoding="utf-8",
+            )
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "scripts" / "view_map.py"),
+                    str(result_dir),
+                    "--summary-only",
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            self.assertIn("mode=result points=2 poses=2", result.stdout)
+
+    def test_viewer_demo_is_available_without_dataset(self):
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "view_map.py"),
+                "--demo",
+                "--summary-only",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        self.assertRegex(result.stdout, r"mode=synthetic points=[1-9][0-9]+ poses=[1-9][0-9]+")
+
 
 if __name__ == "__main__":
     unittest.main()
