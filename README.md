@@ -1,6 +1,6 @@
 # SceneSLAM
 
-**SceneSLAM is a real-time RGB-D visual odometry and dense mapping system.** It takes the colour and depth frames of a consumer depth camera, estimates the camera trajectory in metric units, and reconstructs the scene as a coloured 3-D point cloud — the localisation and reconstruction layer that robot navigation, AR placement and 3-D scanning are built on.
+**SceneSLAM is an RGB-D visual odometry and 3-D reconstruction system.** It takes the colour and depth frames of a consumer depth camera, estimates the camera trajectory in metric units, and reconstructs the scene as a coloured point cloud — the localisation and reconstruction layer that robot navigation, AR placement and 3-D scanning are built on.
 
 ![SceneSLAM map of TUM RGB-D freiburg1_room](docs/images/fr1_room_map.jpg)
 
@@ -44,7 +44,7 @@ Requirements: CMake 3.20+, a C++20 compiler, OpenCV 4.x, and [uv](https://docs.a
 
 ```bash
 make install                                   # uv sync: viewer and evaluation environment
-make build OPENCV_DIR=/path/to/opencv4         # configure and compile
+make build OPENCV_DIR=/path/to/opencv/lib/cmake/opencv4   # configure and compile
 make test                                      # full ctest suite
 make run DATASET=/path/to/rgbd_dataset_freiburg1_room OUT=out/fr1_room
 make view OUT=out/fr1_room                     # open the result in Rerun
@@ -108,7 +108,7 @@ The world frame is the first camera frame, so `--up` is the scene's vertical exp
 
 ## Evaluation
 
-Accuracy is measured with `evo` against the sequence's ground truth. The script prints the exact commands, or runs them with `--execute`; alignment is rigid only, since RGB-D output is already in metres and correcting scale would hide a real error. Error windows default to 30 frames, one second at the TUM frame rate:
+Accuracy is measured with `evo` against the sequence's ground truth. The script prints the exact commands, or runs them with `--execute` when `evo` is installed; `make eval` fetches `evo` on the fly instead. Alignment is rigid only, since RGB-D output is already in metres and correcting scale would hide a real error. Error windows default to 30 frames, one second at the TUM frame rate:
 
 ```bash
 python scripts/evaluate.py --groundtruth /path/to/groundtruth.txt \
@@ -127,7 +127,7 @@ This repository contains no dataset files. The one measured run it does claim is
 
 ## Third-party components
 
-SceneSLAM implements its pipeline directly and uses OpenCV for image I/O, ORB, matching, PnP, and matrix operations. `evo` and Matplotlib are optional evaluation tools and are not runtime dependencies.
+SceneSLAM implements its pipeline directly and uses OpenCV for image I/O, ORB, matching, PnP, and matrix operations. Rerun powers the optional 3-D viewer, and `evo` and Matplotlib are optional evaluation tools; none of the three is a runtime dependency of `scene_slam` itself.
 
 ## Licence
 
