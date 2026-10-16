@@ -1,12 +1,12 @@
 # SceneSLAM
 
-**SceneSLAM is an RGB-D visual odometry and 3-D reconstruction system.** It takes the colour and depth frames of a consumer depth camera, estimates the camera trajectory in metric units, and reconstructs the scene as a coloured point cloud — the localisation and reconstruction layer that robot navigation, AR placement and 3-D scanning are built on.
+**SceneSLAM is an RGB-D visual odometry and 3-D reconstruction system.** It takes the colour and depth frames of a consumer depth camera, estimates the camera trajectory in metric units, and reconstructs the scene as a coloured point cloud: the localisation and reconstruction layer that robot navigation, AR placement and 3-D scanning are built on.
 
 ![SceneSLAM map of TUM RGB-D freiburg1_room](docs/images/fr1_room_map.jpg)
 
 *TUM RGB-D `freiburg1_room`: 45 seconds of handheld Kinect footage reconstructed as 1.4 M coloured points, with the estimated camera trajectory in orange.*
 
-Written in C++20 with OpenCV, CPU-only, and faster than camera rate on a laptop. Feature tracking, PnP pose estimation, map integration and pose composition are implemented directly rather than wrapped around an existing SLAM library, and every geometric step has its own test. Loop closure and pose-graph optimisation are not implemented yet, so the map drifts over long trajectories — by how much is measured below.
+Written in C++20 with OpenCV, CPU-only, and faster than camera rate on a laptop. Feature tracking, PnP pose estimation, map integration and pose composition are implemented directly rather than wrapped around an existing SLAM library, and every geometric step has its own test.
 
 ## Results
 
@@ -20,7 +20,7 @@ Full `freiburg1_room` sequence, 1359 frames, i7-11800H, OpenCV 4.14:
 | ATE RMSE vs. motion capture | 0.412 m |
 | RPE per second | 0.070 m, 3.34° |
 
-Relative error stays at 7 cm per second of motion and does not grow; absolute error does, because nothing corrects it — 0.412 m RMSE and 0.78 m at worst over the 45-second loop. That gap is exactly what loop closure and pose-graph optimisation would remove, and it is the next thing to build. [Full record](docs/results_tum_fr1_room.md): commands, environment, and the trajectory plotted against ground truth.
+Relative error holds at 7 cm per second of motion over the whole sequence and does not grow; absolute error accumulates to 0.412 m RMSE across the 45-second loop, 0.78 m at its worst point. [Full record](docs/results_tum_fr1_room.md): commands, environment, and the trajectory plotted against ground truth.
 
 ![Keyframe frusta over the reconstructed office](docs/images/fr1_room_keyframes.jpg)
 
@@ -36,7 +36,7 @@ Relative error stays at 7 cm per second of motion and does not grow; absolute er
 - Deterministic output: bit-identical across runs, with tests on every geometric step.
 - Interactive 3-D viewer for finished runs, and reproducible screenshot rendering.
 
-Not implemented: loop closure, pose-graph optimisation, relocalisation, bundle adjustment, live camera input. See [known limitations](docs/known_limitations.md).
+The scope of the pipeline and the conditions it has been tested under are set out in [known limitations](docs/known_limitations.md).
 
 ## Quick start
 

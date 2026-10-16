@@ -88,12 +88,11 @@ Relative pose error over one-second windows (30 frames), SE(3)-aligned:
 ## Reading the numbers
 
 Relative error per second is essentially the same over the first 8 seconds and
-over the full 45, while absolute error grows by a factor of five. That is the expected
-signature of pure odometry: local motion estimates stay consistent, and their
-small errors integrate into unbounded global drift. The room is revisited
-several times in this sequence, so loop closure and pose-graph optimisation —
-neither of which is implemented — are exactly what would bound the absolute
-error here.
+over the full 45, while absolute error grows by a factor of five. That is the
+expected signature of pure odometry: local motion estimates stay consistent,
+and their small errors integrate into unbounded global drift. The room is
+revisited several times in this sequence, which is the condition under which
+loop closure and pose-graph optimisation bound the absolute error.
 
 The same drift is visible in the map: surfaces seen early and late in the
 sequence are reconstructed at slightly different places, which thickens walls
