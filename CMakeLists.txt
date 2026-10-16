@@ -46,15 +46,13 @@ add_test(NAME missing_dataset
           --camera ${CMAKE_SOURCE_DIR}/configs/tum_freiburg1.yaml
           --out ${CMAKE_BINARY_DIR}/missing-output)
 set_tests_properties(missing_dataset PROPERTIES WILL_FAIL TRUE)
+find_package(Python3 COMPONENTS Interpreter QUIET)
+if(Python3_Interpreter_FOUND)
+  add_test(NAME scripts
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/test_scripts.py)
+endif()
 if(WIN32)
   set_tests_properties(geometry association pnp outputs pipeline selftest missing_dataset
     PROPERTIES ENVIRONMENT_MODIFICATION
     "PATH=path_list_prepend:${OpenCV_DIR}/x64/vc16/bin")
 endif()
-
-
-
-
-
-
-
