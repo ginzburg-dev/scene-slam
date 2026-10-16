@@ -6,6 +6,7 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <optional>
@@ -164,6 +165,30 @@ RunSummary runDataset(const RunOptions& options) {
   summary.skipped_rgb_frames =
       association.unmatched_rgb + (association.pairs.size() - selected);
   summary.unmatched_depth_frames = association.unmatched_depth;
+  if (!records.empty()) {
+    summary.tracking_success_percent =
+        100.0 * static_cast<double>(summary.tracked_frames) /
+        static_cast<double>(records.size());
+    std::vector<double> tracking_times;
+    tracking_times.reserve(records.size());
+    double total_tracking_time_ms = 0.0;
+    for (const auto& record : records) {
+      tracking_times.push_back(record.tracking_time_ms);
+      total_tracking_time_ms += record.tracking_time_ms;
+    }
+    std::sort(tracking_times.begin(), tracking_times.end());
+    const std::size_t middle = tracking_times.size() / 2;
+    summary.median_tracking_time_ms = tracking_times.size() % 2 == 0
+        ? 0.5 * (tracking_times[middle - 1] + tracking_times[middle])
+        : tracking_times[middle];
+    const std::size_t p95_index = static_cast<std::size_t>(
+        std::ceil(0.95 * static_cast<double>(tracking_times.size()))) - 1;
+    summary.p95_tracking_time_ms = tracking_times[p95_index];
+    if (total_tracking_time_ms > 0.0) {
+      summary.mean_fps =
+          1000.0 * static_cast<double>(records.size()) / total_tracking_time_ms;
+    }
+  }
   writeTumTrajectory(options.output / "trajectory_tum.txt", records);
   writeFramesJsonl(options.output / "frames.jsonl", records);
   map.writePly(options.output / "map.ply");

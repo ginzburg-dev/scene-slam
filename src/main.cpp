@@ -73,7 +73,9 @@ int main(int argc, char** argv) {
               << " lost=" << summary.lost_frames
               << " skipped_rgb=" << summary.skipped_rgb_frames
               << " unmatched_depth=" << summary.unmatched_depth_frames
-              << " map_points=" << summary.map_points << '\n';
+              << " map_points=" << summary.map_points
+              << " success=" << summary.tracking_success_percent << "%"
+              << " mean_fps=" << summary.mean_fps << '\n';
     return 0;
   } catch (const std::exception& error) {
     std::cerr << "error: " << error.what() << '\n';

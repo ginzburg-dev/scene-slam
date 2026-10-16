@@ -91,6 +91,10 @@ int main() {
     RunSummary run_summary{2, 2, 2, 1, 1, 1};
     run_summary.skipped_rgb_frames = 3;
     run_summary.unmatched_depth_frames = 4;
+    run_summary.tracking_success_percent = 50.0;
+    run_summary.median_tracking_time_ms = 12.5;
+    run_summary.p95_tracking_time_ms = 20.0;
+    run_summary.mean_fps = 80.0;
     writeSummaryJson(directory.path() / "summary.json", run_summary);
 
     const std::string trajectory = readText(directory.path() / "trajectory_tum.txt");
@@ -105,6 +109,10 @@ int main() {
     CHECK_TRUE(summary.find("\"lost_frames\": 1") != std::string::npos);
     CHECK_TRUE(summary.find("\"skipped_rgb_frames\": 3") != std::string::npos);
     CHECK_TRUE(summary.find("\"unmatched_depth_frames\": 4") != std::string::npos);
+    CHECK_TRUE(summary.find("\"tracking_success_percent\": 50") != std::string::npos);
+    CHECK_TRUE(summary.find("\"median_tracking_time_ms\": 12.5") != std::string::npos);
+    CHECK_TRUE(summary.find("\"p95_tracking_time_ms\": 20") != std::string::npos);
+    CHECK_TRUE(summary.find("\"mean_fps\": 80") != std::string::npos);
   });
 
   return failures == 0 ? 0 : 1;

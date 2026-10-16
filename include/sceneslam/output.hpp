@@ -34,6 +34,10 @@ struct RunSummary {
   std::size_t map_points{};
   std::size_t skipped_rgb_frames{};
   std::size_t unmatched_depth_frames{};
+  double tracking_success_percent{};
+  double median_tracking_time_ms{};
+  double p95_tracking_time_ms{};
+  double mean_fps{};
 };
 
 void writeTumTrajectory(const std::filesystem::path& path,

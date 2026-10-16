@@ -102,6 +102,10 @@ int main() {
     CHECK_TRUE(summary.map_points <= 50);
     CHECK_TRUE(summary.skipped_rgb_frames == 1);
     CHECK_TRUE(summary.unmatched_depth_frames == 0);
+    CHECK_TRUE(summary.tracking_success_percent > 60.0);
+    CHECK_TRUE(summary.median_tracking_time_ms > 0.0);
+    CHECK_TRUE(summary.p95_tracking_time_ms >= summary.median_tracking_time_ms);
+    CHECK_TRUE(summary.mean_fps > 0.0);
     CHECK_TRUE(fs::exists(output / "trajectory_tum.txt"));
     CHECK_TRUE(fs::exists(output / "frames.jsonl"));
     CHECK_TRUE(fs::exists(output / "map.ply"));
