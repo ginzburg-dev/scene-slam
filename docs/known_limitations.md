@@ -8,4 +8,5 @@
 - The voxel map keeps the first point in each voxel; it is not a TSDF or watertight mesh.
 - Runtime is offline CPU processing; real-time camera, ROS 2, and hardware claims have not been validated.
 - The Rerun viewer visualises completed runs; live sensor capture is not implemented yet.
-- No ATE, RPE, FPS, or accuracy result is claimed until a real dataset run is recorded.
+- The only accuracy, timing, and memory results claimed are from one recorded run on TUM RGB-D `freiburg1_room`; see [results](results_tum_fr1_room.md). Nothing is claimed for any other sequence, scene type, or machine.
+- That run drifts to 0.41 m ATE RMSE over 45 seconds while its per-second relative error stays near 0.07 m, which is the accumulated drift that loop closure would bound.

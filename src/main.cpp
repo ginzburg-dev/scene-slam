@@ -13,7 +13,8 @@ void printUsage() {
   std::cout << "Usage:\n"
                "  scene_slam selftest\n"
                "  scene_slam run --dataset PATH --camera FILE --out PATH "
-               "[--max-frames N] [--frame-step N] [--max-skew SECONDS]\n";
+               "[--max-frames N] [--frame-step N] [--max-skew SECONDS] "
+               "[--voxel-size METRES] [--max-points N]\n";
 }
 
 std::string requireValue(int& index, int argc, char** argv) {
@@ -61,6 +62,12 @@ int main(int argc, char** argv) {
       } else if (argument == "--max-skew") {
         options.max_timestamp_skew_seconds =
             std::stod(requireValue(index, argc, argv));
+      } else if (argument == "--voxel-size") {
+        options.map_config.voxel_size_m =
+            std::stod(requireValue(index, argc, argv));
+      } else if (argument == "--max-points") {
+        options.map_config.max_points =
+            std::stoull(requireValue(index, argc, argv));
       } else {
         throw std::invalid_argument("unknown option: " + argument);
       }

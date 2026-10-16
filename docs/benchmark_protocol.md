@@ -17,3 +17,5 @@ scene_slam run --dataset /data/rgbd_dataset_freiburg1_xyz \
 
 Then use `scripts/evaluate.py` with the sequence `groundtruth.txt` and generated trajectory.
 
+[Results on TUM fr1/room](results_tum_fr1_room.md) is a worked example of this protocol.
+

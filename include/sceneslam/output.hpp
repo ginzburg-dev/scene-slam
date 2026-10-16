@@ -32,6 +32,7 @@ struct RunSummary {
   std::size_t tracked_frames{};
   std::size_t lost_frames{};
   std::size_t map_points{};
+  bool map_capacity_reached{};
   std::size_t skipped_rgb_frames{};
   std::size_t unmatched_depth_frames{};
   double tracking_success_percent{};

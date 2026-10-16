@@ -46,10 +46,12 @@ add_test(NAME missing_dataset
           --camera ${CMAKE_SOURCE_DIR}/configs/tum_freiburg1.yaml
           --out ${CMAKE_BINARY_DIR}/missing-output)
 set_tests_properties(missing_dataset PROPERTIES WILL_FAIL TRUE)
-find_package(Python3 COMPONENTS Interpreter QUIET)
-if(Python3_Interpreter_FOUND)
+find_program(UV_EXECUTABLE uv)
+if(UV_EXECUTABLE)
   add_test(NAME scripts
-    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/test_scripts.py)
+    COMMAND ${UV_EXECUTABLE} run --frozen python
+            ${CMAKE_SOURCE_DIR}/tests/test_scripts.py)
+  set_tests_properties(scripts PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 endif()
 if(WIN32)
   set_tests_properties(geometry association pnp outputs pipeline selftest missing_dataset

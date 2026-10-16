@@ -97,7 +97,9 @@ void writeSummaryJson(const std::filesystem::path& path,
          << summary.median_tracking_time_ms << ",\n"
          << "  \"p95_tracking_time_ms\": " << summary.p95_tracking_time_ms
          << ",\n"
-         << "  \"mean_fps\": " << summary.mean_fps << "\n}\n";
+         << "  \"mean_fps\": " << summary.mean_fps << ",\n"
+         << "  \"map_capacity_reached\": "
+         << (summary.map_capacity_reached ? "true" : "false") << "\n}\n";
 }
 
 }  // namespace sceneslam

@@ -162,6 +162,7 @@ RunSummary runDataset(const RunOptions& options) {
     }
   }
   summary.map_points = map.size();
+  summary.map_capacity_reached = map.size() >= options.map_config.max_points;
   summary.skipped_rgb_frames =
       association.unmatched_rgb + (association.pairs.size() - selected);
   summary.unmatched_depth_frames = association.unmatched_depth;

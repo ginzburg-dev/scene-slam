@@ -109,17 +109,41 @@ def synthetic_scene() -> tuple[
     return points, colors, poses
 
 
-def make_blueprint(rrb):
+def vector3(text: str) -> tuple[float, float, float]:
+    fields = text.split(",")
+    if len(fields) != 3:
+        raise argparse.ArgumentTypeError("expected three comma-separated numbers")
+    try:
+        values = tuple(float(field) for field in fields)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError(str(error)) from error
+    if not all(math.isfinite(value) for value in values):
+        raise argparse.ArgumentTypeError("vector components must be finite")
+    return values
+
+
+def make_blueprint(rrb, args):
+    eye_controls = None
+    if args.eye is not None and args.look_at is not None:
+        eye_controls = rrb.archetypes.EyeControls3D(
+            kind="Orbital",
+            position=args.eye,
+            look_target=args.look_at,
+            eye_up=args.up,
+        )
+    panel_state = "collapsed" if args.hide_panels else "expanded"
     return rrb.Blueprint(
         rrb.Spatial3DView(
             origin="/",
             name="SceneSLAM 3D",
             background=[5, 8, 16],
-            line_grid=rrb.LineGrid3D(visible=True, spacing=1.0),
+            line_grid=rrb.LineGrid3D(visible=not args.hide_grid, spacing=1.0),
+            eye_controls=eye_controls,
         ),
-        rrb.SelectionPanel(state="expanded"),
-        rrb.TimePanel(state="expanded", timeline="frame"),
-        collapse_panels=False,
+        rrb.BlueprintPanel(state=panel_state),
+        rrb.SelectionPanel(state="collapsed"),
+        rrb.TimePanel(state=panel_state, timeline="frame"),
+        collapse_panels=args.hide_panels,
     )
 
 
@@ -131,7 +155,7 @@ def log_scene(args, poses, demo_data=None) -> int:
         print("Rerun dependency is missing. Install with: uv sync", file=sys.stderr)
         return 2
 
-    blueprint = make_blueprint(rrb)
+    blueprint = make_blueprint(rrb, args)
     if args.save is None:
         rr.init("scene_slam", spawn=True, default_blueprint=blueprint)
     else:
@@ -232,7 +256,31 @@ def parse_args():
     parser.add_argument("--save", type=Path, help="write an .rrd recording instead of opening the viewer")
     parser.add_argument("--point-size", type=float, default=1.5, help="demo point radius in UI pixels")
     parser.add_argument("--frustum-step", type=int, default=15)
+    parser.add_argument(
+        "--eye", type=vector3, help="screenshot camera position as X,Y,Z in world metres"
+    )
+    parser.add_argument(
+        "--look-at", type=vector3, help="screenshot camera target as X,Y,Z in world metres"
+    )
+    parser.add_argument(
+        "--up",
+        type=vector3,
+        default=(0.0, -1.0, 0.0),
+        help="world up direction for --eye as X,Y,Z",
+    )
+    parser.add_argument(
+        "--hide-panels",
+        action="store_true",
+        help="collapse the Rerun side panels for clean screenshots",
+    )
+    parser.add_argument(
+        "--hide-grid",
+        action="store_true",
+        help="hide the ground grid, which is tilted in the first-camera world frame",
+    )
     args = parser.parse_args()
+    if (args.eye is None) != (args.look_at is None):
+        parser.error("--eye and --look-at must be used together")
     if not args.demo and args.result_dir is None:
         parser.error("result_dir is required unless --demo is used")
     if args.point_size <= 0 or args.frustum_step <= 0:

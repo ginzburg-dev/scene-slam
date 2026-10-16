@@ -95,6 +95,7 @@ int main() {
     run_summary.median_tracking_time_ms = 12.5;
     run_summary.p95_tracking_time_ms = 20.0;
     run_summary.mean_fps = 80.0;
+    run_summary.map_capacity_reached = true;
     writeSummaryJson(directory.path() / "summary.json", run_summary);
 
     const std::string trajectory = readText(directory.path() / "trajectory_tum.txt");
@@ -113,6 +114,7 @@ int main() {
     CHECK_TRUE(summary.find("\"median_tracking_time_ms\": 12.5") != std::string::npos);
     CHECK_TRUE(summary.find("\"p95_tracking_time_ms\": 20") != std::string::npos);
     CHECK_TRUE(summary.find("\"mean_fps\": 80") != std::string::npos);
+    CHECK_TRUE(summary.find("\"map_capacity_reached\": true") != std::string::npos);
   });
 
   return failures == 0 ? 0 : 1;

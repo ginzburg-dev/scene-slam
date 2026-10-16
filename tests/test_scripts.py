@@ -24,7 +24,11 @@ class ScriptTests(unittest.TestCase):
             text=True,
         )
         self.assertIn("evo_ape tum groundtruth.txt trajectory_tum.txt --align", result.stdout)
-        self.assertIn("evo_rpe tum groundtruth.txt trajectory_tum.txt --align", result.stdout)
+        self.assertIn(
+            "evo_rpe tum groundtruth.txt trajectory_tum.txt --align --delta 30 --delta_unit f",
+            result.stdout,
+        )
+        self.assertIn("--pose_relation angle_deg", result.stdout)
         self.assertNotIn("--correct_scale", result.stdout)
 
     def test_renderer_reports_valid_trajectory_extent_without_plot_dependencies(self):
@@ -92,6 +96,43 @@ class ScriptTests(unittest.TestCase):
                 text=True,
             )
             self.assertEqual(saved.stderr, "")
+            self.assertGreater(recording.stat().st_size, 0)
+
+    def test_viewer_rejects_an_incomplete_screenshot_camera(self):
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "view_map.py"),
+                "--demo",
+                "--summary-only",
+                "--eye=1,2,3",
+            ],
+            capture_output=True,
+            text=True,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("--eye and --look-at must be used together", result.stderr)
+
+    def test_viewer_saves_a_recording_with_a_fixed_camera(self):
+        with tempfile.TemporaryDirectory() as directory:
+            recording = Path(directory) / "framed.rrd"
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "scripts" / "view_map.py"),
+                    "--demo",
+                    "--save",
+                    str(recording),
+                    "--hide-panels",
+                    "--hide-grid",
+                    "--eye=3,2,1",
+                    "--look-at=0,0,0",
+                    "--up=0,-1,0",
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
             self.assertGreater(recording.stat().st_size, 0)
 
     def test_viewer_demo_is_available_without_dataset(self):
